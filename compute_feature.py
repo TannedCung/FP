@@ -66,14 +66,9 @@ def compute_features(name, image_folder= FACE_IMAGES_FOLDER,):
     print('Doing a comptation of features')
     images, names = list_image(image_folder, name)
     features = resnet50_features.predict(images)
-        
-    # extractor = FaceExtractor()
-    
+
     save_folder = os.path.join(FACE_IMAGES_FOLDER, name)
     os.makedirs(save_folder, exist_ok=True)
-
-    # extractor.extract_faces(name, save_folder)
-    # ut.agumentate(save_folder)
 
     precompute_features = list(load_pickle("./data/pickle/precompute_features.pickle"))
     person_name = list(load_pickle("./data/pickle/names.pickle"))
