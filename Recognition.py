@@ -47,12 +47,31 @@ class FaceIdentify():
         print("Loading model done")
 
     @classmethod
-    def draw_label(cls, image, point, label, font=cv2.FONT_HERSHEY_SIMPLEX,
-                   font_scale=0.5, thickness=1):
-        size = cv2.getTextSize(label, font, font_scale, thickness)[0]
-        x, y = point
-        cv2.rectangle(image, (x, y - size[1]), (x + size[0], y), (255, 0, 0), cv2.FILLED)
-        cv2.putText(image, label, point, font, font_scale, (255, 255, 255), thickness)
+    def draw_label(cls, frame, points, labels, scores, font=cv2.FONT_HERSHEY_SIMPLEX, font_scale=0.5,
+                    thickness=1):
+        Stds = load_pickle("./data/pickle/Students.pickle")
+        red = (10, 20, 255)
+        green = (30, 255, 10)
+        black = (0, 0, 0)
+        for i,point in enumerate(points):
+            (x,y,w,h)= point
+            label = "{}".format(labels[i])
+            score = "{:.3f}%".format(scores[i]*100)
+            if label == "Unknown":
+                size = cv2.getTextSize(label, font, font_scale, thickness)[0]
+                cv2.rectangle(frame, (x, y - size[1]), (x + size[0], y), red, cv2.FILLED)
+                cv2.rectangle(frame, (x,y), (x+w, y+h), red)
+                cv2.putText(frame, label, (x, y), font, font_scale, black, thickness)
+            else:
+                infor = next(item for item in Stds if item["name"] == label)
+                size = cv2.getTextSize(infor.get('name') + "   " + score, font, font_scale, thickness)[0]
+                cv2.rectangle(frame, (x,y), (x+w, y+h), green)
+                cv2.rectangle(frame, (x, y - size[1]), (x + size[0], y+5), green, cv2.FILLED)
+                cv2.putText(frame, infor.get('name') + "   " + score, (x, y), font, font_scale, black, thickness)
+                cv2.rectangle(frame, (x, y+5), (x + size[0], y + size[1]+10), green, cv2.FILLED)
+                cv2.putText(frame, "ID: {}".format(infor.get("ID")), (x, y + size[1]+5), font, font_scale, black, thickness)
+                cv2.rectangle(frame, (x, y + size[1]+10), (x + size[0], y + 2*size[1]+15 ), green, cv2.FILLED)
+                cv2.putText(frame, "school_year: {}".format(infor.get("school_year")), (x, y + 2*size[1]+10), font, font_scale, black, thickness)
 
     def crop_face(self, imgarray, section, margin=20, size=224):
         """
@@ -88,19 +107,20 @@ class FaceIdentify():
         resized_img = np.array(resized_img)
         return resized_img, (x_a, y_a, x_b - x_a, y_b - y_a)
 
-    def identify_face(self, features, threshold=0.1):
+    def identify_face(self, faces, threshold=0.95):
         list_name = list(os.listdir(FACE_IMAGES_FOLDER))
         list_name.sort()
         list_person_name = []
         list_score = []
         # self.recog_model.summary()
+        features = self.model.predict(faces)
         for feature in features:
             feature = np.expand_dims(feature, axis=0)
             scores = self.recog_model.predict(feature)
             person_score = np.max(scores)
             list_score.append(person_score)
             id = np.argmax(scores)
-            print(id)
+            # print(id)
             person_name = list_name[np.argmax(scores)]
             # print(person_score*100, person_name)
 
@@ -110,76 +130,33 @@ class FaceIdentify():
                 list_person_name.append("Unknown")
         return list_person_name, np.array(list_score) 
 
-    def detect_face(self):
+    def detect_face(self, frame):
+        """
+        need: 1 frame of the stream
+        return: a list of cropped images to identify + its (x,y,w,h)
+        """
         face_cascade = cv2.CascadeClassifier(self.Cascade_path)
-        Stds = load_pickle("./data/pickle/Students.pickle")
-        print(type(Stds), Stds)
-
-        # 0 means the default video capture device in OS
-        video_capture = cv2.VideoCapture(0)
-        # infinite loop, break by key ESC
-        result = 0
-        while True:
-            if not video_capture.isOpened():
-                sleep(5)
-            # Capture frame-by-frame
-            ret, frame = video_capture.read()
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            faces = face_cascade.detectMultiScale(
-                gray,
-                scaleFactor=1.2,
-                minNeighbors=5,
-                minSize=(32, 32)
-            )
-            # print(len(faces))
-            # placeholder for cropped faces
-            face_imgs = np.empty((len(faces), self.face_size, self.face_size, 3))
-            for i, face in enumerate(faces):
-                face_img, cropped = self.crop_face(frame, face, margin=10, size=self.face_size)
-                (x, y, w, h) = cropped
-                cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 200, 0), 2)
-                face_imgs[i, :, :, :] = face_img
-
-            if len(face_imgs) > 0:
-                # generate features for each face
-                features_faces = self.model.predict(face_imgs)
-                predicted_names, scores = self.identify_face(features_faces)
-            # draw results
-            for i, face in enumerate(faces):
-                label = "{}".format(predicted_names[i])
-                score = "{}".format(scores[i]*100)
-                if label == 'Unknown':
-                    result = 1
-                else:
-                    infor = next(item for item in Stds if item["name"] == label)
-                    self.draw_label(frame, (face[0], face[1]), infor.get('name') + "   " + score)
-                    self.draw_label(frame, (face[0], face[1] + 25), str(infor.get('ID')))
-                    self.draw_label(frame, (face[0], face[1] + 50), str(infor.get('school_year')))
-                    result = 0
-                result += result
-
-            cv2.imshow('Keras Faces', frame)
-            if cv2.waitKey(5) == 27 or result > 0:  # ESC key press
-                break
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        faces = face_cascade.detectMultiScale(
+                                            gray,
+                                            scaleFactor=1.2,
+                                            minNeighbors=5,
+                                            minSize=(32, 32)
+                                            )
+        face_imgs = np.empty((len(faces), self.face_size, self.face_size, 3))   
+        points = []     
+        for i, face in enumerate(faces):
+            face_img, cropped = self.crop_face(frame, face, margin=10, size=self.face_size)
+            face_imgs[i, :, :, :] = face_img
+            points.append(cropped)
+        return face_imgs, points
     
         
-        # When everything is done, release the capture
-        # video_capture.release()
-        # cv2.destroyAllWindows()
-        print (result)
-        if result > 0 :
-            new_std = Student.Student()
-            new_std.save_infor()
-            in4 = new_std.get_infor()
-            name = in4.get('name')
-            exactor = compute_feature.FaceExtractor()
-            exactor.extract_faces(name, video_capture)
-            compute_feature.compute_features()
-            compute_feature.biuld_new_model()
-
+'''
 def main():
     face = FaceIdentify()
     face.detect_face()
 
 if __name__ == "__main__":
     main()
+'''

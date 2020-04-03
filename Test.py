@@ -160,7 +160,7 @@ def sum(numbers):
     for number in numbers:
         sum += number
 '''
-
+'''
 # 6
 dicts = [
     { "name": "Tom", "age": 10 },
@@ -171,3 +171,53 @@ dicts = [
 
 a = next(item for item in dicts if item["name"] == "Pam")
 print(a.get('age'))
+'''
+
+# 7
+class FaceIdentify():
+
+    def detect_face(self, frame):
+        """
+        need: 1 frame of the stream
+        return: a list of cropped images to identify + its (x,y,w,h)
+        """
+        face_cascade = cv2.CascadeClassifier(self.Cascade_path)
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        faces = face_cascade.detectMultiScale(
+                                            gray,
+                                            scaleFactor=1.2,
+                                            minNeighbors=5,
+                                            minSize=(32, 32)
+                                            )
+        face_imgs = np.empty((len(faces), self.face_size, self.face_size, 3))   
+        points = []     
+        for i, face in enumerate(faces):
+            face_img, cropped = self.crop_face(frame, face, margin=10, size=self.face_size)
+            faces_imgs[i, :, :, :] = face_img
+            points.append(cropped)
+        return face_imgs, points
+    
+    def draw_label(cls, frame, points, labels, scores, font=cv2.FONT_HERSHEY_SCRIPT_COMPLEX, font_scale=0.5,
+                    thickness=1):
+        Stds = load_pickle("./data/pickle/Students.pickle")
+        red = (10, 20, 255)
+        green = (30, 255, 10)
+        black = (0, 0, 0)
+        for i,point in enumerate(points):
+            size = cv2.getTextSize(labesl[i], font, font_scale, thickness)[0]
+            (x,y,w,h)= point
+            label = "{}".format(labels[i])
+            score = "{:.3f}%".format(scores[i]*100)
+                if label == "Unknown":
+                    cv2.rectangle(image, (x, y - size[1]), (x + size[0], y), red, cv2.FILLED)
+                    cv2.rectangle(frame, (x,y), (x+w, y+h), red)
+                    cv2.putText(image, label, (x, y), font, font_scale, black, thickness)
+                else:
+                    infor = next(item for item in Stds if item["name"] == label[i])
+                    cv2.rectangle(frame, (x,y), (x+w, y+h), green)
+                    cv2.rectangle(image, (x, y - size[1]), (x + size[0], y), green, cv2.FILLED)
+                    cv2.putText(image, infor.get('name') + "   " + score, (x, y), font, font_scale, black, thickness)
+                    cv2.rectangle(image, (x, y), (x + size[0], y + size[1]), green, cv2.FILLED)
+                    cv2.putText(image, "ID: {}".format(infor.get("ID")), (x, y + size[1]), font, font_scale, black, thickness)
+                    cv2.rectangle(image, (x, y + size[1]), (x + size[0], y + ), green, cv2.FILLED)
+                    cv2.putText(image, "school_year: {}".format(infor.get("school_year")), (x,*size[1] y), font, font_scale, black, thickness)
