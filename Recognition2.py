@@ -1,4 +1,4 @@
-# all funtions in this module take input as a list of frames or list of face poistions
+# all funtions in this module take input as a single frame or single face poistion
 from keras.engine import Model
 from keras import models
 from keras import layers
@@ -26,7 +26,7 @@ def save_pikle(address, pickleFile):
 
 def load_pickle(address):
     if not os.path.exists(address):
-        save_pikle(address, {"name": '???', "id": '???'})
+        save_pikle(address, {})
     file_to_load = open(address, "rb")
     pickleFile = pickle.load(file_to_load)
     file_to_load.close()
@@ -49,31 +49,36 @@ class FaceIdentify():
         print("Loading model done")
 
     @classmethod
-    def draw_label(cls, frame, points, labels, scores, font=cv2.FONT_HERSHEY_SIMPLEX, font_scale=0.5,
+    def draw_label(cls, frame, point, score, flag, label=None, font=cv2.FONT_HERSHEY_SIMPLEX, font_scale=0.5,
                     thickness=1):
         Stds = load_pickle("./data/pickle/Students.pickle")
         red = (10, 20, 255)
         green = (30, 255, 10)
         black = (0, 0, 0)
-        for i,point in enumerate(points):
-            (x,y,w,h)= point
-            label = "{}".format(labels[i])
-            score = "{:.3f}%".format(scores[i]*100)
-            if label == "Unknown":
-                size = cv2.getTextSize(label, font, font_scale, thickness)[0]
-                cv2.rectangle(frame, (x, y - size[1]), (x + size[0], y), red, cv2.FILLED)
-                cv2.rectangle(frame, (x,y), (x+w, y+h), red)
-                cv2.putText(frame, label, (x, y), font, font_scale, black, thickness)
-            else:
-                infor = next(item for item in Stds if item["name"] == label)
-                size = cv2.getTextSize(infor.get('name') + "   " + score, font, font_scale, thickness)[0]
-                cv2.rectangle(frame, (x,y), (x+w, y+h), green)
-                cv2.rectangle(frame, (x, y - size[1]), (x + size[0], y+5), green, cv2.FILLED)
-                cv2.putText(frame, infor.get('name') + "   " + score, (x, y), font, font_scale, black, thickness)
-                cv2.rectangle(frame, (x, y+5), (x + size[0], y + size[1]+10), green, cv2.FILLED)
-                cv2.putText(frame, "ID: {}".format(infor.get("ID")), (x, y + size[1]+5), font, font_scale, black, thickness)
-                cv2.rectangle(frame, (x, y + size[1]+10), (x + size[0], y + 2*size[1]+15 ), green, cv2.FILLED)
-                cv2.putText(frame, "school_year: {}".format(infor.get("school_year")), (x, y + 2*size[1]+10), font, font_scale, black, thickness)
+        yellow = (10, 255, 225)
+        (x,y,w,h)= point
+        if flag < 5:
+            label = "Detecting {}%". format(flag*20-1)
+            size = cv2.getTextSize(label, font, font_scale, thickness)[0]
+            cv2.rectangle(frame, (x, y - size[1]), (x + size[0], y), yellow, cv2.FILLED)
+            cv2.rectangle(frame, (x,y), (x+w, y+h), yellow)
+            cv2.putText(frame, label, (x, y), font, font_scale, black, thickness)
+        elif flag == 6:
+            label = "Stranger"
+            size = cv2.getTextSize(label, font, font_scale, thickness)[0]
+            cv2.rectangle(frame, (x, y - size[1]), (x + size[0], y), red, cv2.FILLED)
+            cv2.rectangle(frame, (x,y), (x+w, y+h), red)
+            cv2.putText(frame, label, (x, y), font, font_scale, black, thickness)
+        elif flag == 5:
+            infor = next(item for item in Stds if item["name"] == label)
+            size = cv2.getTextSize(infor.get('name') + "   " + str(score), font, font_scale, thickness)[0]
+            cv2.rectangle(frame, (x,y), (x+w, y+h), green)
+            cv2.rectangle(frame, (x, y - size[1]), (x + size[0], y+5), green, cv2.FILLED)
+            cv2.putText(frame, infor.get('name') + "   " + str(score), (x, y), font, font_scale, black, thickness)
+            cv2.rectangle(frame, (x, y+5), (x + size[0], y + size[1]+10), green, cv2.FILLED)
+            cv2.putText(frame, "ID: {}".format(infor.get("ID")), (x, y + size[1]+5), font, font_scale, black, thickness)
+            cv2.rectangle(frame, (x, y + size[1]+10), (x + size[0], y + 2*size[1]+15 ), green, cv2.FILLED)
+            cv2.putText(frame, "school_year: {}".format(infor.get("school_year")), (x, y + 2*size[1]+10), font, font_scale, black, thickness)
 
     def crop_face(self, imgarray, section, margin=20, size=224):
         """
@@ -109,28 +114,22 @@ class FaceIdentify():
         resized_img = np.array(resized_img)
         return resized_img, (x_a, y_a, x_b - x_a, y_b - y_a)
 
-    def identify_face(self, faces, threshold=0.95):
+    def identify_face(self, face, threshold=0.1):
         list_name = list(os.listdir(FACE_IMAGES_FOLDER))
         list_name.sort()
-        list_person_name = []
-        list_score = []
         # self.recog_model.summary()
-        features = self.model.predict(faces)
-        for feature in features:
-            feature = np.expand_dims(feature, axis=0)
-            scores = self.recog_model.predict(feature)
-            person_score = np.max(scores)
-            list_score.append(person_score)
-            id = np.argmax(scores)
-            # print(id)
-            person_name = list_name[np.argmax(scores)]
-            # print(person_score*100, person_name)
+        feature = self.model.predict(face)
+        # feature = np.expand_dims(feature, axis=0)
+        scores = self.recog_model.predict(feature)
+        score = np.max(scores)
+        # print(id)
+        person_name = list_name[np.argmax(scores)]
+        # print(person_score*100, person_name)
 
-            if person_score >= threshold:
-                list_person_name.append(person_name)
-            else:
-                list_person_name.append("Unknown")
-        return list_person_name, np.array(list_score) 
+        if score < threshold:
+            person_name = "Unknown"
+
+        return person_name, score 
 
     def detect_face(self, frame):
         """
@@ -154,6 +153,7 @@ class FaceIdentify():
         return face_imgs, points
 
     def predict_face_from_eyes(self, last_face, frame, margin=10):
+
         eye_detect = cv2.CascadeClassifier(self.eye_path)
         face = cv2.cvtColor(frame[x-margin:x+w+margin, y-margin:y+h+margin], cv2.COLOR_BGR2GRAY)
         center = (0,0)
@@ -163,9 +163,9 @@ class FaceIdentify():
             for i in len(eyes):
                 for j in len(eyes):
                     if i==j:
-                        matrx[i][j] == 1000
+                        matrx[i][j] = 1000
                     else:
-                        matrx[i][j] = eyes[i][1] - eyes[j][1] if (eyes[i][1] - eyes[j][1]) >=0 else 1000
+                        matrx[i][j] = (eyes[i][1] - eyes[j][1]) if (eyes[i][1] - eyes[j][1]) >=0 else 1000
 
             y1 = np.argmin(matrx.min(axis=1))
             y2 = np.argmin(matrx.min(axis=0))  
