@@ -20,7 +20,11 @@ from keras.models import load_model
 import random
 from sklearn.model_selection import GridSearchCV
 from sklearn.linear_model import LogisticRegression
+import dlib
+from keras.engine import  Model
 
+Cascade_path = "./pretrained_models/haarcascade_frontalface_alt.xml"
+eye_path = "./pretrained_models/haarcascade_eye.xml"
 
 
 '''
@@ -174,6 +178,7 @@ print(a.get('age'))
 '''
 
 # 7
+'''
 class FaceIdentify():
 
     def detect_face(self, frame):
@@ -221,3 +226,102 @@ class FaceIdentify():
                     cv2.putText(image, "ID: {}".format(infor.get("ID")), (x, y + size[1]), font, font_scale, black, thickness)
                     cv2.rectangle(image, (x, y + size[1]), (x + size[0], y + ), green, cv2.FILLED)
                     cv2.putText(image, "school_year: {}".format(infor.get("school_year")), (x,*size[1] y), font, font_scale, black, thickness)
+'''
+'''
+# 8 
+face_detect = cv2.CascadeClassifier(Cascade_path)
+video = cv2.VideoCapture(0)
+frame_counter = 0
+faceTracker = {}
+face_number = 0
+carCurrentPosition = {}
+while True:
+    _, frame = video.read()
+
+    if frame is None:
+        sleep(5)
+    
+    if not (frame_counter % 50):
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        faces = face_detect.detectMultiScale(frame, scaleFactor=1.1,
+                                            minNeighbors=50, minSize=(50,50), flags=cv2.CASCADE_SCALE_IMAGE)
+        for (x, y, w, h) in faces :
+            x = int(x)
+            y = int(y)
+            w = int(w)
+            h = int(h)
+
+			# Tinh tam diem cua car
+            x_center = x + 0.5 * w
+            y_center = y + 0.5 * h
+
+
+            matchfaceID = None
+			# Duyet qua cac car da track
+            for faceID in faceTracker.keys():
+                # Lay vi tri cua car da track
+                trackedPosition = faceTracker[faceID].get_position()
+                t_x = int(trackedPosition.left())
+                t_y = int(trackedPosition.top())
+                t_w = int(trackedPosition.width())
+                t_h = int(trackedPosition.height())
+                # Tinh tam diem cua car da track
+                t_x_center = t_x + 0.5 * t_w
+                t_y_center = t_y + 0.5 * t_h
+
+                # Kiem tra xem co phai ca da track hay khong
+                if (t_x <= x_center <= (t_x + t_w)) and (t_y <= y_center <= (t_y + t_h)) and (x <= t_x_center <= (x + w)) and (y <= t_y_center <= (y + h)):
+                    matchfaceID = faceID
+
+			# Neu khong phai car da track thi tao doi tuong tracking moi
+            if matchfaceID is None:
+
+                tracker = dlib.correlation_tracker()
+                tracker.start_track(frame, dlib.rectangle(x, y, x + w, y + h))
+
+                faceTracker[face_number] = tracker
+                # carStartPosition[face_number] = [x, y, w, h]
+
+                face_number +=1
+
+	# Thuc hien update position cac car
+    for faceID in faceTracker.keys():
+        trackedPosition = faceTracker[faceID].get_position()
+
+        t_x = int(trackedPosition.left())
+        t_y = int(trackedPosition.top())
+        t_w = int(trackedPosition.width())
+        t_h = int(trackedPosition.height())
+
+        cv2.rectangle(frame, (t_x, t_y), (t_x + t_w, t_y + t_h), (255,0,0), 4)
+        carCurrentPosition[faceID] = [t_x, t_y, t_w, t_h]
+        faceTracker[faceID].update(frame)
+        print (carCurrentPosition[faceID])
+    cv2.imshow("vd", frame)
+    if cv2.waitKey(6) == 27:
+        break
+'''
+# 9 
+
+'''resnet50_features = VGGFace(model='resnet50',
+                            include_top=False,
+                            input_shape=(224, 224, 3),
+                            pooling='avg')  # pooling: None, avg or max
+'''
+nb_class = 30
+vgg_model = VGGFace(model='resnet50', include_top=False, input_shape=(224, 224, 3))
+vgg_model.summary()
+last_layer = vgg_model.get_layer('activation_49').output
+x = Flatten(name='flatten')(last_layer)
+out = Dense(nb_class, activation='softmax', name='classifier')(x)
+custom_vgg_model = Model(vgg_model.input, out)
+custom_vgg_model.summary()
+'''
+
+
+resnet50_features2 = VGGFace(model='resnet50')
+                            # input_shape=(224, 224, 3),
+                            # pooling='avg')  # pooling: None, avg or max
+print("include_top = True")
+resnet50_features2.summary()
+'''

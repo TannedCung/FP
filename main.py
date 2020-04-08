@@ -75,6 +75,7 @@ def main():
             t_h = int(trackedPosition.height())
 
             faceCurrentPos[faceID] = (t_x, t_y, t_w, t_h)
+            faceTracker[faceID].update(frame)
             cv2.rectangle(frame, (t_x,t_y), (t_x+t_w, t_y+t_h), (225,225,0))
             # if the face state (status) is Unknown, draw red rect,
             # no more recognition
@@ -98,20 +99,20 @@ def main():
             # in 5 times of recognize that face, if at any time, the label change
             # that person should be a stranger
             elif faceStatus[faceID] < 5 and faceStatus[faceID] > 0:
+                the_bodyguard.draw_label(frame=frame, point=faceCurrentPos[faceID],
+                                            score=score[faceID], flag=faceStatus[faceID] )
                 if not (frame_counter % 2):
                     face, pos = the_bodyguard.crop_face(frame, faceCurrentPos[faceID])
                     face = np.expand_dims(face, axis=0)
                     name, sc = the_bodyguard.identify_face(face)
                     if label[faceID] == name:
                         score[faceID] = (score[faceID]*(faceStatus[faceID]-1) + sc)/faceStatus[faceID] 
-                        the_bodyguard.draw_label(frame=frame, point=faceCurrentPos[faceID],
-                                            score=score[faceID], flag=faceStatus[faceID] )
                         faceStatus[faceID] += 1
                     else:
                         label[faceID] = "Unknown"
                         faceStatus[faceID] = 6
-                        the_bodyguard.draw_label(frame=frame, point=faceCurrentPos[faceID],
-                                            score=score[faceID], flag=6 )
+                        # the_bodyguard.draw_label(frame=frame, point=faceCurrentPos[faceID],
+                        #                   score=score[faceID], flag=6 )
         cv2.imshow('Hi there !', frame)
         if cv2.waitKey(5) == ord('q'):
             break
