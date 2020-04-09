@@ -14,7 +14,7 @@ def load_image(img_path):
         return: list of images in shape (1, 224, 224, 3)
     '''
     face_images = list(glob.iglob(os.path.join(img_path, '*.*')))
-    print(len(face_images))
+    # print(face_images)
     list_image = []
     for imagePath in face_images:
         img = load_img(imagePath)
@@ -71,5 +71,5 @@ def agu_shift(img_path):
 def agumentate(img_path):
     agu_brightness(img_path)
     agu_rotate(img_path)
-    agu_shear(img_path)
-    agu_shift(img_path)
+    # agu_shear(img_path)
+    # agu_shift(img_path)

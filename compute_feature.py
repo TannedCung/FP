@@ -173,14 +173,6 @@ class FaceExtractor():
 
 
 def biuld_new_model():
-    '''resnet50_features = VGGFace(model='resnet50',
-                                include_top=False,
-                                input_shape=(224, 224, 3),
-                                pooling='avg')  # pooling: None, avg or max
-
-
-    features, id_name = compute_feature(image_folder=FACE_IMAGES_FOLDER, names= names)
-    '''
     print ("Building new recog model")
     features = np.array(load_pickle('./data/pickle/precompute_features.pickle'))
     id_name = load_pickle('./data/pickle/names.pickle')

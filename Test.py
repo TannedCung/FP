@@ -22,6 +22,7 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.linear_model import LogisticRegression
 import dlib
 from keras.engine import  Model
+import utlis
 
 Cascade_path = "./pretrained_models/haarcascade_frontalface_alt.xml"
 eye_path = "./pretrained_models/haarcascade_eye.xml"
@@ -307,16 +308,17 @@ while True:
                             include_top=False,
                             input_shape=(224, 224, 3),
                             pooling='avg')  # pooling: None, avg or max
-'''
+
 nb_class = 30
 vgg_model = VGGFace(model='resnet50', include_top=False, input_shape=(224, 224, 3))
-vgg_model.summary()
+# vgg_model.summary()
 last_layer = vgg_model.get_layer('activation_49').output
+print(type(last_layer))
 x = Flatten(name='flatten')(last_layer)
 out = Dense(nb_class, activation='softmax', name='classifier')(x)
 custom_vgg_model = Model(vgg_model.input, out)
 custom_vgg_model.summary()
-'''
+
 
 
 resnet50_features2 = VGGFace(model='resnet50')
@@ -325,3 +327,13 @@ resnet50_features2 = VGGFace(model='resnet50')
 print("include_top = True")
 resnet50_features2.summary()
 '''
+
+# 10
+for p, n, f in os.walk('./train_data'):
+    for folder in n:
+        path = os.path.join(p, folder)
+        files = list(glob.iglob(os.path.join(path, "*.*")))
+        if len(files) < 20:
+            utlis.agumentate(path)
+        files1 = list(glob.iglob(os.path.join(path, "*.*")))
+        print ('{},  {} -> {}'.format(folder, len(files), len(files1)))
