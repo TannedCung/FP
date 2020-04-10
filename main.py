@@ -1,6 +1,6 @@
-import compute_feature
+import compute_feature_v2
 import Student
-import Recognition2 as Recognition
+import Recognition2_v2 as Recognition
 import cv2
 import numpy as np
 import dlib
@@ -18,8 +18,6 @@ def main():
                     # 5 = "Known"
                     # 6 = "Unknown"
     label = {}  # contains name
-    score = {}
-    print(type(score))
     video_capture = cv2.VideoCapture(0)
     # infinite loop, break by key ESC
     the_bodyguard = Recognition.FaceIdentify()
@@ -67,6 +65,7 @@ def main():
                     face_number += 1
 
         for faceID in faceTracker.keys():
+            print(faceStatus[faceID])
             trackedPosition = faceTracker[faceID].get_position()
 
             t_x = int(trackedPosition.left())
@@ -81,34 +80,35 @@ def main():
             # no more recognition
             if faceStatus[faceID] == 6:
                 the_bodyguard.draw_label(frame=frame, point=faceCurrentPos[faceID],
-                                        score=0, flag=6)
+                                         flag=6)
             # if the face state is Known, draw that person information
             elif faceStatus[faceID] == 5:
                 the_bodyguard.draw_label(frame=frame, point=faceCurrentPos[faceID],
-                                        score=score[faceID], flag=5, label=label[faceID])
+                                         flag=5, label=label[faceID])
             # if this is the 1st time detected, detect it
             elif faceStatus[faceID] == 0:
                 face, pos = the_bodyguard.crop_face(frame, faceCurrentPos[faceID])
                 face = np.expand_dims(face, axis=0)
-                name, sc = the_bodyguard.identify_face(face)
+                name = the_bodyguard.identify_face(face)
                 label[faceID] = name
-                score[faceID] = sc
                 the_bodyguard.draw_label(frame=frame, point=faceCurrentPos[faceID],
-                                        score=score[faceID], flag=0 )
+                                         flag=0 )
                 faceStatus[faceID] += 1
             # in 5 times of recognize that face, if at any time, the label change
             # that person should be a stranger
             elif faceStatus[faceID] < 5 and faceStatus[faceID] > 0:
+                print(label[faceID])
                 the_bodyguard.draw_label(frame=frame, point=faceCurrentPos[faceID],
-                                            score=score[faceID], flag=faceStatus[faceID] )
+                                             flag=faceStatus[faceID] )
+                if label[faceID] == "Unknown":
+                    faceStatus[faceID] = 6
                 if not (frame_counter % 2):
                     face, pos = the_bodyguard.crop_face(frame, faceCurrentPos[faceID])
                     face = np.expand_dims(face, axis=0)
-                    name, sc = the_bodyguard.identify_face(face)
+                    name = the_bodyguard.identify_face(face)
                     if label[faceID] == name:
-                        score[faceID] = (score[faceID]*(faceStatus[faceID]-1) + sc)/faceStatus[faceID] 
                         faceStatus[faceID] += 1
-                    else:
+                    elif label[faceID] != name:
                         label[faceID] = "Unknown"
                         faceStatus[faceID] = 6
                         # the_bodyguard.draw_label(frame=frame, point=faceCurrentPos[faceID],
