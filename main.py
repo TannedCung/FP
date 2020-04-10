@@ -36,12 +36,12 @@ def main():
                 w = int(_w)
                 h = int(_h)
 
-                # Tinh tam diem cua face
+                # cal center of the face
                 x_center = x + 0.5 * w
                 y_center = y + 0.5 * h  
 
                 matchFaceID = None
-                # thru tracked faces, check if this i-th face were the new face
+                # thru tracked faces, check if this i-th face were a new face
                 for faceID in faceTracker.keys():
                     trackedPosition = faceTracker[faceID].get_position()
 
@@ -85,7 +85,7 @@ def main():
             elif faceStatus[faceID] == 5:
                 the_bodyguard.draw_label(frame=frame, point=faceCurrentPos[faceID],
                                          flag=5, label=label[faceID])
-            # if this is the 1st time detected, detect it
+            # if this is the 1st time detected, recognize it
             elif faceStatus[faceID] == 0:
                 face, pos = the_bodyguard.crop_face(frame, faceCurrentPos[faceID])
                 face = np.expand_dims(face, axis=0)
@@ -94,7 +94,7 @@ def main():
                 the_bodyguard.draw_label(frame=frame, point=faceCurrentPos[faceID],
                                          flag=0 )
                 faceStatus[faceID] += 1
-            # in 5 times of recognize that face, if at any time, the label change
+            # in 5 times of recognizing that face, if at any time, the label changes,
             # that person should be a stranger
             elif faceStatus[faceID] < 5 and faceStatus[faceID] > 0:
                 print(label[faceID])
