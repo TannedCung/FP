@@ -327,7 +327,7 @@ resnet50_features2 = VGGFace(model='resnet50')
 print("include_top = True")
 resnet50_features2.summary()
 '''
-
+'''
 # 10
 for p, n, f in os.walk('./train_data'):
     for folder in n:
@@ -336,4 +336,15 @@ for p, n, f in os.walk('./train_data'):
         if len(files) < 20:
             utlis.agumentate(path)
         files1 = list(glob.iglob(os.path.join(path, "*.*")))
-        print ('{},  {} -> {}'.format(folder, len(files), len(files1)))
+        print ('{},  {} -> {}'.format(folder, len(files), len(files1)))\
+'''
+
+# 11
+def ret(a):
+    if a > 1:
+        return 1
+    return 0
+
+print(ret(2))
+print("-----------------------")
+print(ret(0))

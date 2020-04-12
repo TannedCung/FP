@@ -65,7 +65,6 @@ def main():
                     face_number += 1
 
         for faceID in faceTracker.keys():
-            print(faceStatus[faceID])
             trackedPosition = faceTracker[faceID].get_position()
 
             t_x = int(trackedPosition.left())
@@ -74,6 +73,11 @@ def main():
             t_h = int(trackedPosition.height())
 
             faceCurrentPos[faceID] = (t_x, t_y, t_w, t_h)
+            # detect mask and draw the result
+            mask = the_bodyguard.is_mask_on(frame=frame, face_area=faceCurrentPos[faceID])
+            print(mask)
+            the_bodyguard.draw_mask_stt(frame=frame, point=faceCurrentPos[faceID], state=mask)
+            
             faceTracker[faceID].update(frame)
             cv2.rectangle(frame, (t_x,t_y), (t_x+t_w, t_y+t_h), (225,225,0))
             # if the face state (status) is Unknown, draw red rect,

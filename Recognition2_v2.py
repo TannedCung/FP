@@ -9,6 +9,8 @@ import glob
 import pickle
 import compute_feature
 from scipy.spatial import distance
+import dlib
+from imutils import face_utils
 
 FACE_IMAGES_FOLDER = "./data/face_images"
 
@@ -30,10 +32,14 @@ class FaceIdentify():
 
     Cascade_path = "./pretrained_models/haarcascade_frontalface_alt.xml"
     eye_path = "./pretrained_models/haarcascade_eye.xml"
+    landmark_path = "./pretrained_models/shape_predictor_68_face_landmarks.dat"
 
     def __init__(self, precompute_features_file='./data/pickle/precompute_features.pickle'):
         self.face_size = 224
         self.precompute_features_map = load_pickle(precompute_features_file)
+        self.landmark_detect = dlib.shape_predictor(self.landmark_path)
+        self.eye_detect = cv2.CascadeClassifier(self.eye_path)
+        self.face_cascade = cv2.CascadeClassifier(self.Cascade_path)
         print("Loading VGG Face model...")
         self.model = VGGFace(model='resnet50',
                              include_top=False,
@@ -72,6 +78,24 @@ class FaceIdentify():
             cv2.putText(frame, "ID: {}".format(infor.get("ID")), (x, y + size[1]+5), font, font_scale, black, thickness)
             cv2.rectangle(frame, (x, y + size[1]+10), (x + size[0], y + 2*size[1]+15 ), green, cv2.FILLED)
             cv2.putText(frame, "school_year: {}".format(infor.get("school_year")), (x, y + 2*size[1]+10), font, font_scale, black, thickness)
+        
+    def draw_mask_stt(cls, frame, point, state, font=cv2.FONT_HERSHEY_SIMPLEX, font_scale=0.5,
+                    thickness=1):
+        red = (10, 20, 255)
+        green = (30, 255, 10)
+        black = (0, 0, 0)
+        x,y,w,h = point
+        if state == 1:
+            label = 'Mask: On'
+            size = cv2.getTextSize(label, font, font_scale, thickness)[0]
+            cv2.rectangle(frame, (x+w-size[0], y+h-size[1]), (x+w, y+h), green, cv2.FILLED)
+            cv2.putText(frame, label, (x+w-size[0], y+h), font, font_scale, black, thickness)
+        else:
+            label = 'Mask: Off'
+            size = cv2.getTextSize(label, font, font_scale, thickness)[0]
+            cv2.rectangle(frame, (x+w-size[0], y+h-size[1]), (x+w, y+h), red, cv2.FILLED)
+            cv2.putText(frame, label, (x+w-size[0], y+h), font, font_scale, black, thickness)
+
 
     def crop_face(self, imgarray, section, margin=20, size=224):
         """
@@ -129,9 +153,8 @@ class FaceIdentify():
         need: 1 frame of the stream
         return: a list of cropped images to identify + its (x,y,w,h)
         """
-        face_cascade = cv2.CascadeClassifier(self.Cascade_path)
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        faces = face_cascade.detectMultiScale(
+        faces = self.face_cascade.detectMultiScale(
                                             gray,
                                             scaleFactor=1.2,
                                             minNeighbors=5,
@@ -146,11 +169,9 @@ class FaceIdentify():
         return face_imgs, points
 
     def predict_face_from_eyes(self, last_face, frame, margin=10):
-
-        eye_detect = cv2.CascadeClassifier(self.eye_path)
         face = cv2.cvtColor(frame[x-margin:x+w+margin, y-margin:y+h+margin], cv2.COLOR_BGR2GRAY)
         center = (0,0)
-        eyes = eye_detect.detectMultiScale(face, scaleFactor=1.1, minNeighbors=30, minSize=(10, 10), flags=cv2.CASCADE_SCALE_IMAGE)
+        eyes = self.eye_detect.detectMultiScale(face, scaleFactor=1.1, minNeighbors=30, minSize=(10, 10), flags=cv2.CASCADE_SCALE_IMAGE)
         if len(eyes)>2 :
             matrx = np.zeros(len(eyes), len(eyes))
             for i in len(eyes):
@@ -177,6 +198,40 @@ class FaceIdentify():
         w = int(2.67*a)
         h = int(2.67*a)
         return (x,y,w,h)
+    
+    def is_mask_on(self,frame, face_area):
+        x, y, w, h = face_area
+        face = frame[y:y+h, x:x+w]
+        gray = cv2.cvtColor(face, cv2.COLOR_BGR2GRAY)
+        rect = dlib.rectangle(0, 0, w, h)
+        landmark = self.landmark_detect(gray, rect)
+        landmark = face_utils.shape_to_np(landmark)
+        # Capture mouth area        		
+        (mStart, mEnd) = face_utils.FACIAL_LANDMARKS_IDXS["mouth"]
+        mouth = landmark[mStart:mEnd]
+        boundRect = cv2.boundingRect(mouth)
+        # Calculate hsv of mouth area
+        hsv = cv2.cvtColor(face[int(boundRect[1]):int(boundRect[1] + boundRect[3]),
+                                int(boundRect[0]):int(boundRect[0] + boundRect[2])], cv2.COLOR_RGB2HSV)
+        area = int(boundRect[2])*int(boundRect[3])
+
+        boundaries = [
+        ([0, 0, 0], [360, 255, 25]), # black
+        ([0, 0, 166], [360, 39, 255]),  # white
+        ([0, 0, 25], [360, 39, 166]), # gray
+        ([150, 39, 25], [180, 255, 255]), # bule-green # with cyan included
+        ([180, 39, 25], [255, 255, 255]) # blue # also inculded navy
+        ]
+
+        for (lower, upper) in boundaries:
+            lower = np.array(lower)
+            upper = np.array(upper)
+
+            mask = cv2.inRange(hsv, lower, upper)
+            # print(np.sum(mask)/area)
+            if np.sum(mask)/area > 50:
+                return 1
+        return 0  
             
 '''
 def main():
