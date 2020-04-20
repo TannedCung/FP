@@ -17,7 +17,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from keras.callbacks import ModelCheckpoint
 import Recognition
-
+import tensorflow as tf
+from math import hypot, cos, sin, pi
 
 FACE_IMAGES_FOLDER = "./data/face_images"
 
@@ -58,17 +59,56 @@ def list_image(image_path, name):
         
     return np.vstack(list_image), np.vstack(list_name)
 
+class make_color():
+    def __init__(self, frame, center=(320, 240), radius=140 ):
+        self.frame = np.empty((center[1]*2, center[0]*2, 3), np.uint8)
+        self.mask = np.empty((center[1]*2, center[0]*2, 3), np.uint8)*0
+        self.x, self.y = center
+        self.radius = radius
+
+    def circle_mask(self):
+        rows, cols, _ = self.frame.shape
+
+        for i in range(cols):
+            for j in range(rows):
+                if hypot(i-self.x, j-self.y) > self.radius:
+                    self.frame[j,i] = 0.5
+                else: 
+                    self.frame[j,i] = 1
+        return self.frame
+
+    def draw_percent(self, percent, l=20):
+        cv2.circle(self.mask, (self.x, self.y), self.radius, (225,10,225), 3)
+        alpha = 2*pi*percent
+        # first point
+        x1 = int(self.x + (self.radius+15)*sin(alpha))
+        y1 = int(self.y - (self.radius+15)*cos(alpha))
+        # second point
+        x2 = int(x1 + l*sin(alpha))
+        y2 = int(y1 - l*cos(alpha))
+
+        cv2.line(self.mask, (x1,y1), (x2,y2), (10,225,10), 2)
+        return self.mask
+
+
+        
+
 class FaceExtractor():
 
     Cascade_path = "./pretrained_models/haarcascade_frontalface_alt.xml"
 
     def __init__(self, face_size=224):
         self.face_size = face_size
-        self.resnet50_features = VGGFace(model='resnet50',
-                                include_top=False,
-                                input_shape=(224, 224, 3),
-                                pooling='avg')  # pooling: None, avg or max
-
+        print("Loading VGG model")
+        self.graph = tf.Graph()
+        with self.graph.as_default():
+            self.session = tf.Session()
+            with self.session.as_default():
+                self.resnet50_features = VGGFace(model='resnet50',
+                                        include_top=False,
+                                        input_shape=(224, 224, 3),
+                                        pooling='avg')  # pooling: None, avg or max
+        print("Loading done")
 
     def crop_face(self, imgarray, section, margin=20, size=224):
         """
@@ -105,28 +145,36 @@ class FaceExtractor():
         return resized_img, (x_a, y_a, x_b - x_a, y_b - y_a)
 
     def extract_faces(self, name, cap, save_folder=FACE_IMAGES_FOLDER):
+        """
+        need: capture, name
+        return: nothing, but save 100 images of that person in directory /save_folder/name
+        """ 
         face_cascade = cv2.CascadeClassifier(self.Cascade_path)
         save_folder = os.path.join(save_folder, name)
         os.makedirs(save_folder)
         # 0 means the default video capture device in OS
         # cap = cv2.VideoCapture(0)
         cap = cap
-
-        '''
-        length = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         width  = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         fps    = cap.get(cv2.CAP_PROP_FPS)
-        print("length: {}, w x h: {} x {}, fps: {}".format(length, width, height, fps))
-
-        '''
+        
         # infinite loop, break by key ESC
         frame_counter = 0
+        face_counter = 0
+        max_counter = 100
+
         while(cap.isOpened()):
             ret, frame = cap.read()
-            if ret and frame_counter / 5 <= 100:
+            if ret:
+                # make the mask at the first frame
+                if frame_counter == 0:
+                    colorist = make_color(frame=frame)
+                    mask1 = colorist.circle_mask()
+                    mask2 = colorist.draw_percent(percent=0)
+                
                 frame_counter = frame_counter + 1
-                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                gray = cv2.cvtColor(frame[int((height/2)-colorist.radius):int((height/2)+colorist.radius), int((width/2)-colorist.radius):int((width/2)+colorist.radius)], cv2.COLOR_BGR2GRAY)
                 faces = face_cascade.detectMultiScale(
                     gray,
                     scaleFactor=1.2,
@@ -140,22 +188,33 @@ class FaceExtractor():
                 elif len(faces) == 1:
                     face = faces[0]
                 if face is not None:
-                    face_img, cropped = self.crop_face(frame, face, margin=40, size=self.face_size)
+                    face_counter += 1
+                    face_img, cropped = self.crop_face(frame, face, margin=20, size=self.face_size)
                     (x, y, w, h) = cropped
-                    cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 200, 0), 2)
-                    if frame_counter % 5 == 0 :
-                        imgfile = name +"_"+ str(frame_counter / 5) + ".png"
+                    mask2 = colorist.draw_percent(percent=(face_counter/max_counter))
+                    if frame_counter % 3 == 0 :
+                        imgfile = name +"_"+ str(face_counter) + ".png"
                         imgfile = os.path.join(save_folder, imgfile)
                         cv2.imwrite(imgfile, face_img)
-                cv2.imshow('Faces', frame)
-            if cv2.waitKey(5) == 27:  # ESC key press
+
+                check_img = cv2.multiply(frame, mask1)
+                check_back = np.asarray(cv2.multiply(frame,(1-mask1))*0.2, np.uint8)
+                check_img = cv2.add(check_img, check_back)
+                cv2.imshow('Faces', cv2.add(check_img, mask2))
+            if cv2.waitKey(5) == 27 or face_counter >= max_counter:   # ESC key press
                 break
-        # cap.release()
-        # cv2.destroyAllWindows()
-    def compute_features(name, image_folder= FACE_IMAGES_FOLDER,):      
+        cv2.destroyAllWindows()
+        
+    def compute_features(self, name, image_folder= FACE_IMAGES_FOLDER,):     
+        """
+        need: a folder of the person with the namen given
+        return: nothing, but save avg feature to compute_feature.pickle
+        """ 
         print('Doing a comptation of features')
         images, names = list_image(image_folder, name)
-        features = self.resnet50_features.predict(images)
+        with self.graph.as_default():
+            with self.session.as_default():
+                features = self.resnet50_features.predict(images)
         # caculate mean fearures and save
         save_folder = os.path.join(FACE_IMAGES_FOLDER, name)
         feature_vector = np.array(features).sum(axis=0)/len(features)
@@ -163,4 +222,7 @@ class FaceExtractor():
         precompute_features = list(load_pickle("./data/pickle/precompute_features.pickle"))
         precompute_features.append({"name": name, "features": feature_vector})
         save_pikle("./data/pickle/precompute_features.pickle", precompute_features)
-    
+'''
+a = FaceExtractor()
+a.compute_features(name="Tanned")   
+'''

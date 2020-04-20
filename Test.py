@@ -22,7 +22,9 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.linear_model import LogisticRegression
 import dlib
 from keras.engine import  Model
-import utlis
+from tkinter import *
+from tkinter import ttk
+
 
 Cascade_path = "./pretrained_models/haarcascade_frontalface_alt.xml"
 eye_path = "./pretrained_models/haarcascade_eye.xml"
@@ -338,7 +340,7 @@ for p, n, f in os.walk('./train_data'):
         files1 = list(glob.iglob(os.path.join(path, "*.*")))
         print ('{},  {} -> {}'.format(folder, len(files), len(files1)))\
 '''
-
+'''
 # 11
 def ret(a):
     if a > 1:
@@ -348,3 +350,62 @@ def ret(a):
 print(ret(2))
 print("-----------------------")
 print(ret(0))
+'''
+# 12
+
+tk = Tk()
+
+def submit():
+    n = str(name.get())
+    i = int(id.get())
+    sy = int(school_year.get())
+    a = Label(tk, text="{}...{}...{}".format(n,i,sy))
+    a.pack()
+name = Entry(tk, width=50)
+name.pack()
+name.insert(0, "Tell me your name: ")
+id = Entry(tk, width=50)
+id.pack()
+id.insert(0, "Your ID: ")
+school_year = Entry(tk, width=50)
+school_year.pack()
+school_year.insert(0, "And your schoolyear: ")
+
+submit = Button(tk, text="Submit", command=submit)
+submit.pack()
+
+def click(event):
+
+
+options = ['1', '2', '3']
+
+cb = ttk.Combobox(tk, value=options)
+cb.current(0)
+cb.bind("<<ComboboxSelected>>", click)
+cb.pack
+
+exit = Button(tk, text="Exit", command=tk.destroy)
+exit.pack()
+
+tk.mainloop()
+'''
+
+# 13
+def save_pikle(address, pickleFile):
+    file_to_save = open(address, "wb")
+    pickle.dump(pickleFile, file_to_save)
+    file_to_save.close()
+
+def load_pickle(address):
+    if not os.path.exists(address):
+        save_pikle(address, {})
+    file_to_load = open(address, "rb")
+    pickleFile = pickle.load(file_to_load)
+    file_to_load.close()
+    return pickleFile
+add = "./data/pickle/Students.pickle"
+
+files = load_pickle(add)
+print(files)
+
+'''

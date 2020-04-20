@@ -25,10 +25,10 @@ class Student:
         self.temp = 38
 
     def save_infor(self, name = 'Unknown', id = 00000000, school_year = 61):
-        self.name = input('It seems the first time we have met, can you give me your name: ')
-        self.id = int(input('your ID: '))
-        self.school_year = int(input('And your school year: '))
-        print('Thanks, next time i will recognize you')
+        self.name = name
+        self.id = int(id)
+        self.school_year = int(school_year)
+
         files = list(load_pickle("./data/pickle/Students.pickle"))
         files.append(self.get_infor())
         save_pikle("./data/pickle/Students.pickle", files)

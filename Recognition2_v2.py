@@ -11,6 +11,8 @@ import compute_feature
 from scipy.spatial import distance
 import dlib
 from imutils import face_utils
+import tensorflow as tf
+from tensorflow import *
 
 FACE_IMAGES_FOLDER = "./data/face_images"
 
@@ -41,10 +43,15 @@ class FaceIdentify():
         self.eye_detect = cv2.CascadeClassifier(self.eye_path)
         self.face_cascade = cv2.CascadeClassifier(self.Cascade_path)
         print("Loading VGG Face model...")
-        self.model = VGGFace(model='resnet50',
-                             include_top=False,
-                             input_shape=(224, 224, 3),
-                             pooling='avg')  # pooling: None, avg or max
+        self.graph = tf.Graph()
+        with self.graph.as_default():
+            self.session = Session()
+            with self.session.as_default():
+                self.model = VGGFace(model='resnet50',
+                                    include_top=False,
+                                    input_shape=(224, 224, 3),
+                                    pooling='avg')  # pooling: None, avg or max
+                self.graph = tf.get_default_graph()
         print("Loading VGG Face model done")
 
     @classmethod
@@ -133,11 +140,13 @@ class FaceIdentify():
 
     def identify_face(self, face, threshold=100):
         distances = []
-        features = self.model.predict(face)
+        with self.graph.as_default():
+            with self.session.as_default():
+                features = self.model.predict(face)
         for person in self.precompute_features_map:
             person_features = person.get("features")
-            distance = distance.euclidean(person_features, features)
-            distances.append(distance)
+            dist = distance.euclidean(person_features, features)
+            distances.append(dist)
         if len(distances) == 0:
             return "Unknown"
         else:
@@ -202,37 +211,42 @@ class FaceIdentify():
     def is_mask_on(self,frame, face_area):
         x, y, w, h = face_area
         face = frame[y:y+h, x:x+w]
-        gray = cv2.cvtColor(face, cv2.COLOR_BGR2GRAY)
-        rect = dlib.rectangle(0, 0, w, h)
-        landmark = self.landmark_detect(gray, rect)
-        landmark = face_utils.shape_to_np(landmark)
-        # Capture mouth area        		
-        (mStart, mEnd) = face_utils.FACIAL_LANDMARKS_IDXS["mouth"]
-        mouth = landmark[mStart:mEnd]
-        boundRect = cv2.boundingRect(mouth)
-        # Calculate hsv of mouth area
-        hsv = cv2.cvtColor(face[int(boundRect[1]):int(boundRect[1] + boundRect[3]),
-                                int(boundRect[0]):int(boundRect[0] + boundRect[2])], cv2.COLOR_RGB2HSV)
-        area = int(boundRect[2])*int(boundRect[3])
+        if np.array(face).size == 0:
+            return 0
+        else:
+            gray = cv2.cvtColor(face, cv2.COLOR_BGR2GRAY)
+            rect = dlib.rectangle(0, 0, w, h)
+            landmark = self.landmark_detect(gray, rect)
+            landmark = face_utils.shape_to_np(landmark)
+            # Capture mouth area        		
+            (mStart, mEnd) = face_utils.FACIAL_LANDMARKS_IDXS["mouth"]
+            mouth = landmark[mStart:mEnd]
+            boundRect = cv2.boundingRect(mouth)
+            # Calculate hsv of mouth area
+            hsv = cv2.cvtColor(face[int(boundRect[1]):int(boundRect[1] + boundRect[3]),
+                                    int(boundRect[0]):int(boundRect[0] + boundRect[2])], cv2.COLOR_RGB2HSV)
+            area = int(boundRect[2])*int(boundRect[3])
 
-        boundaries = [
-        ([0, 0, 0], [360, 255, 25]), # black
-        ([0, 0, 166], [360, 39, 255]),  # white
-        ([0, 0, 25], [360, 39, 166]), # gray
-        ([150, 39, 25], [180, 255, 255]), # bule-green # with cyan included
-        ([180, 39, 25], [255, 255, 255]) # blue # also inculded navy
-        ]
+            boundaries = [
+            ([0, 0, 0], [360, 255, 25]), # black
+            ([0, 0, 166], [360, 39, 255]),  # white
+            ([0, 0, 25], [360, 39, 166]), # gray
+            ([150, 39, 25], [180, 255, 255]), # bule-green # with cyan included
+            ([180, 39, 25], [255, 255, 255]) # blue # also inculded navy
+            ]
 
-        for (lower, upper) in boundaries:
-            lower = np.array(lower)
-            upper = np.array(upper)
+            for (lower, upper) in boundaries:
+                lower = np.array(lower)
+                upper = np.array(upper)
 
-            mask = cv2.inRange(hsv, lower, upper)
-            # print(np.sum(mask)/area)
-            if np.sum(mask)/area > 50:
-                return 1
-        return 0  
+                mask = cv2.inRange(hsv, lower, upper)
+                # print(np.sum(mask)/area)
+                if np.sum(mask)/area > 50:
+                    return 1
+            return 0  
             
+    def reload_feature_map(self):
+        self.precompute_features_map = load_pickle('./data/pickle/precompute_features.pickle')
 '''
 def main():
     face = FaceIdentify()

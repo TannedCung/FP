@@ -4,10 +4,8 @@ import Recognition2_v2 as Recognition
 import cv2
 import numpy as np
 import dlib
-
-
-# Problem for now: the tracker doesn't track 
-def main():
+ 
+def ():
     # 0 means the default video capture device in OS
     frame_counter = 0
     face_number = 0
@@ -29,7 +27,7 @@ def main():
         frame_counter += 1
         if not (frame_counter % 10):
             face_imgs, points = the_bodyguard.detect_face(frame)
-		# thru detected faces
+		    # thru detected faces
             for (_x, _y, _w, _h) in points:
                 x = int(_x)
                 y = int(_y)
@@ -75,7 +73,6 @@ def main():
             faceCurrentPos[faceID] = (t_x, t_y, t_w, t_h)
             # detect mask and draw the result
             mask = the_bodyguard.is_mask_on(frame=frame, face_area=faceCurrentPos[faceID])
-            print(mask)
             the_bodyguard.draw_mask_stt(frame=frame, point=faceCurrentPos[faceID], state=mask)
             
             faceTracker[faceID].update(frame)
@@ -115,11 +112,12 @@ def main():
                     elif label[faceID] != name:
                         label[faceID] = "Unknown"
                         faceStatus[faceID] = 6
-                        # the_bodyguard.draw_label(frame=frame, point=faceCurrentPos[faceID],
-                        #                   score=score[faceID], flag=6 )
+        '''
         cv2.imshow('Hi there !', frame)
         if cv2.waitKey(5) == ord('q'):
             break
+        '''
+    return frame
 
 
 if __name__ == "__main__":

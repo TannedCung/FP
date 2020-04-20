@@ -21,6 +21,7 @@ from keras.layers import Dense, Dropout, Activation, Flatten
 from keras.layers import Conv2D, MaxPooling2D
 from keras.callbacks import ModelCheckpoint
 import Student
+import compute_feature_v2 as cf
 
 FACE_IMAGES_FOLDER = "./data/face_images"
 
@@ -30,13 +31,11 @@ def save_pikle(address, pickleFile):
     file_to_save.close()
 
 def load_pickle(address):
-    if not os.path.exists(address):
-        save_pikle(address, {})
     file_to_load = open(address, "rb")
     pickleFile = pickle.load(file_to_load)
     file_to_load.close()
     return pickleFile
-
+'''
 def compute_features(name, image_folder= FACE_IMAGES_FOLDER,):
     print ("Load VGG model")
     # print (name)
@@ -68,15 +67,15 @@ def compute_features(name, image_folder= FACE_IMAGES_FOLDER,):
     save_pikle("./data/pickle/precompute_features.pickle", precompute_features)
     save_pikle("./data/pickle/names.pickle", person_name)
 
-def biuld_new_model():
-    '''resnet50_features = VGGFace(model='resnet50',
+# def biuld_new_model():
+ resnet50_features = VGGFace(model='resnet50',
                                 include_top=False,
                                 input_shape=(224, 224, 3),
                                 pooling='avg')  # pooling: None, avg or max
 
 
     features, id_name = compute_feature(image_folder=FACE_IMAGES_FOLDER, names= names)
-    '''
+
     print ("Building new recog model")
     features = np.array(load_pickle('./data/pickle/precompute_features.pickle'))
     print(features.shape)
@@ -138,19 +137,27 @@ list_names = [os.path.basename(folder) for folder in folders]
 print (list_names)
 for name in list_names:
     compute_features(name)
-
 '''
+
+# for the 1st run
+names = os.listdir(FACE_IMAGES_FOLDER)
+
+first_compute = cf.FaceExtractor()
+for i,name in enumerate(names):
+    first_compute.compute_features(name)
+    print(i)
+
 barrack = Student.Student()
 barrack.save_infor(name="barack", id=20160000, school_year=61)
 michelle = Student.Student()
 michelle.save_infor(name="michelle", id=20160001, school_year=61)
-'''
+
 NPT = Student.Student()
-NPT.save_infor()
+NPT.save_infor(name="Nguyen Phu Trong", id=00000000 )
 NXP = Student.Student()
-NXP.save_infor()
+NXP.save_infor(name="Nguyen Xuan Phuc")
 
 files = list(load_pickle("./data/pickle/Students.pickle"))
 print(files)
-biuld_new_model()
-
+precompute_features = list(load_pickle("./data/pickle/precompute_features.pickle"))
+print(precompute_features)
