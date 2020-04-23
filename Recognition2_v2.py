@@ -1,4 +1,5 @@
 # all funtions in this module take input as a single frame or single face poistion
+from PIL import ImageFont, ImageDraw, Image
 from keras.preprocessing import image
 from keras_vggface.vggface import VGGFace
 import numpy as np
@@ -58,6 +59,11 @@ class FaceIdentify():
     def draw_label(cls, frame, point, flag, label=None, font=cv2.FONT_HERSHEY_SIMPLEX, font_scale=0.5,
                     thickness=1):
         Stds = load_pickle("./data/pickle/Students.pickle")
+        fontpath = "./data/Font/VPSTRSAL.TTF"
+        Font = ImageFont.truetype(fontpath, 100, encoding="unic")
+        img_pil = Image.fromarray(frame)
+        draw = ImageDraw.Draw(img_pil)
+        
         red = (10, 20, 255)
         green = (30, 255, 10)
         black = (0, 0, 0)
@@ -66,25 +72,37 @@ class FaceIdentify():
         if flag < 5:
             label = "Detecting {}%". format(flag*20-1)
             size = cv2.getTextSize(label, font, font_scale, thickness)[0]
+            draw.text((x,y), label , font=Font, fill=black)
             cv2.rectangle(frame, (x, y - size[1]), (x + size[0], y), yellow, cv2.FILLED)
+            frame = np.array(img_pil)
             cv2.rectangle(frame, (x,y), (x+w, y+h), yellow)
-            cv2.putText(frame, label, (x, y), font, font_scale, black, thickness)
+            # cv2.putText(frame, label, (x, y), font, font_scale, black, thickness)
         elif flag == 6:
             label = "Stranger"
             size = cv2.getTextSize(label, font, font_scale, thickness)[0]
+            # cv2.putText(frame, label, (x, y), font, font_scale, black, thickness)
+            draw.text((x,y), label , font=Font, fill=black)
+            frame = np.array(img_pil)
             cv2.rectangle(frame, (x, y - size[1]), (x + size[0], y), red, cv2.FILLED)
             cv2.rectangle(frame, (x,y), (x+w, y+h), red)
-            cv2.putText(frame, label, (x, y), font, font_scale, black, thickness)
         elif flag == 5:
             infor = next(item for item in Stds if item["name"] == label)
             size = cv2.getTextSize(infor.get('name'), font, font_scale, thickness)[0]
+            # cv2.putText(frame, infor.get('name'), (x, y), font, font_scale, black, thickness)
+            draw.text((x,y), infor.get('name') , font=Font, fill=black)
+            frame = np.array(img_pil)
+            cv2.rectangle(frame, (x, y - size[1]), (x + size[0], y+5), green, cv2.FILLED)           
+            size_ID = cv2.getTextSize('ID: '+str(infor.get('ID')), font, font_scale, thickness)[0]
+            # cv2.putText(frame, "ID: {}".format(infor.get("ID")), (x, y + size_ID[1]+5), font, font_scale, black, thickness)
+            draw.text((x,y), "ID: {}".format(infor.get("ID")) , font=Font, fill=black)
+            frame = np.array(img_pil)
+            cv2.rectangle(frame, (x, y+5), (x + size_ID[0], y + size_ID[1]+10), green, cv2.FILLED)
+            size_sy = cv2.getTextSize("school_year: " + str(infor.get('school_year')), font, font_scale, thickness)[0]
+            # cv2.putText(frame, "school_year:{}".format(infor.get("school_year")), (x, y + 2*size_sy[1]+10), font, font_scale, black, thickness)
+            draw.text((x,y), "school_year:{}".format(infor.get("school_year")) , font=Font, fill=black)
+            frame = np.array(img_pil)
+            cv2.rectangle(frame, (x, y + size_sy[1]+10), (x + size_sy[0], y + 2*size_sy[1]+15 ), green, cv2.FILLED)
             cv2.rectangle(frame, (x,y), (x+w, y+h), green)
-            cv2.rectangle(frame, (x, y - size[1]), (x + size[0], y+5), green, cv2.FILLED)
-            cv2.putText(frame, infor.get('name'), (x, y), font, font_scale, black, thickness)
-            cv2.rectangle(frame, (x, y+5), (x + size[0], y + size[1]+10), green, cv2.FILLED)
-            cv2.putText(frame, "ID: {}".format(infor.get("ID")), (x, y + size[1]+5), font, font_scale, black, thickness)
-            cv2.rectangle(frame, (x, y + size[1]+10), (x + size[0], y + 2*size[1]+15 ), green, cv2.FILLED)
-            cv2.putText(frame, "school_year: {}".format(infor.get("school_year")), (x, y + 2*size[1]+10), font, font_scale, black, thickness)
         
     def draw_mask_stt(cls, frame, point, state, font=cv2.FONT_HERSHEY_SIMPLEX, font_scale=0.5,
                     thickness=1):
@@ -102,6 +120,15 @@ class FaceIdentify():
             size = cv2.getTextSize(label, font, font_scale, thickness)[0]
             cv2.rectangle(frame, (x+w-size[0], y+h-size[1]), (x+w, y+h), red, cv2.FILLED)
             cv2.putText(frame, label, (x+w-size[0], y+h), font, font_scale, black, thickness)
+    
+    def draw_VietNamese(self, point, label, color):
+        fontpath = "./Asap-Regular.otf"
+        font = ImageFont.truetype(fontpath, 10)
+        img_pil = Image.fromarray(frame)
+        draw = ImageDraw.Draw(img_pil)
+        draw.text(point, label , font=font, fill=color)
+        frame = np.array(frame)
+
 
 
     def crop_face(self, imgarray, section, margin=20, size=224):
@@ -167,7 +194,8 @@ class FaceIdentify():
                                             gray,
                                             scaleFactor=1.2,
                                             minNeighbors=5,
-                                            minSize=(32, 32)
+                                            minSize=(32, 32),
+                                            flags=cv2.CASCADE_SCALE_IMAGE
                                             )
         face_imgs = np.empty((len(faces), self.face_size, self.face_size, 3))   
         points = []     

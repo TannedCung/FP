@@ -26,7 +26,7 @@ def save_pikle(address, pickleFile):
 
 def load_pickle(address):
     if not os.path.exists(address):
-        save_pikle(address, {"name": '???', "id": '???'})
+        save_pikle(address, {})
     file_to_load = open(address, "rb")
     pickleFile = pickle.load(file_to_load)
     file_to_load.close()

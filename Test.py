@@ -24,6 +24,7 @@ import dlib
 from keras.engine import  Model
 from tkinter import *
 from tkinter import ttk
+from PIL import ImageFont, ImageDraw, Image
 
 
 Cascade_path = "./pretrained_models/haarcascade_frontalface_alt.xml"
@@ -352,6 +353,7 @@ print("-----------------------")
 print(ret(0))
 '''
 # 12
+'''
 
 tk = Tk()
 
@@ -364,9 +366,9 @@ def submit():
 name = Entry(tk, width=50)
 name.pack()
 name.insert(0, "Tell me your name: ")
-id = Entry(tk, width=50)
+id = Label(tk, text="asdf \n asdf \n asdf")
 id.pack()
-id.insert(0, "Your ID: ")
+
 school_year = Entry(tk, width=50)
 school_year.pack()
 school_year.insert(0, "And your schoolyear: ")
@@ -377,17 +379,18 @@ submit.pack()
 def click(event):
 
 
-options = ['1', '2', '3']
+    options = ['1', '2', '3']
 
-cb = ttk.Combobox(tk, value=options)
-cb.current(0)
-cb.bind("<<ComboboxSelected>>", click)
-cb.pack
+    cb = ttk.Combobox(tk, value=options)
+    cb.current(0)
+    cb.bind("<<ComboboxSelected>>", click)
+    cb.pack()
 
 exit = Button(tk, text="Exit", command=tk.destroy)
 exit.pack()
 
 tk.mainloop()
+'''
 '''
 
 # 13
@@ -409,3 +412,40 @@ files = load_pickle(add)
 print(files)
 
 '''
+# 14
+
+a = cv2.VideoCapture(0)
+c = np.empty((4,128,128,3), np.uint8)
+black = (0, 0, 0)
+
+while 1:
+    _, frame = a.read(0)
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    cascade = cv2.CascadeClassifier(Cascade_path)
+    faces = cascade.detectMultiScale(
+                                            gray,
+                                            scaleFactor=1.2,
+                                            minNeighbors=5,
+                                            minSize=(32, 32),
+                                            flags=cv2.CASCADE_SCALE_IMAGE
+                                            )
+    
+    if len(faces) == 1:
+        x,y,w,h = faces[0]
+        b = frame[y:y+h, x:x+w]
+        c[0] = cv2.resize(frame[y:y+h, x:x+w], (128,128))
+        fontpath = "./data/Font/VPSTRSAL.TTF"
+        Font = ImageFont.truetype(fontpath, 30, encoding="unic")
+        img_pil = Image.fromarray(frame)
+        draw = ImageDraw.Draw(img_pil)
+        draw.text((x,y), "Tân" , font=Font, fill=black)
+        frame = np.array(img_pil)
+        cv2.rectangle(frame, (x+w, y+h), (x+w+20, y+h+20),(255,255,0))
+        cv2.imshow('not cropped', b)
+        cv2.imshow('cropped', c[0])
+    cv2.imshow('frame', frame)
+
+    if cv2.waitKey(5) == 27:
+        break
+
+cv2.destroyAllWindows()

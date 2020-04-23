@@ -179,7 +179,8 @@ class FaceExtractor():
                     gray,
                     scaleFactor=1.2,
                     minNeighbors=10,
-                    minSize=(64, 64)
+                    minSize=(64, 64),
+                    flags=cv2.CASCADE_SCALE_IMAGE
                 )
                 # only keep the biggest face as the main subject
                 face = None
