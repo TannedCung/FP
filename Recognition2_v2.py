@@ -55,12 +55,12 @@ class FaceIdentify():
                 self.graph = tf.get_default_graph()
         print("Loading VGG Face model done")
 
-    @classmethod
-    def draw_label(cls, frame, point, flag, label=None, font=cv2.FONT_HERSHEY_SIMPLEX, font_scale=0.5,
+    
+    def draw_label(self, frame, point, flag, label=None, font=cv2.FONT_HERSHEY_SIMPLEX, font_scale=0.5,
                     thickness=1):
         Stds = load_pickle("./data/pickle/Students.pickle")
-        fontpath = "./data/Font/VPSTRSAL.TTF"
-        Font = ImageFont.truetype(fontpath, 100, encoding="unic")
+        fontpath = "./data/Font/Asap-Regular.otf"
+        Font = ImageFont.truetype(fontpath, 16, encoding="unic")
         img_pil = Image.fromarray(frame)
         draw = ImageDraw.Draw(img_pil)
         
@@ -72,39 +72,49 @@ class FaceIdentify():
         if flag < 5:
             label = "Detecting {}%". format(flag*20-1)
             size = cv2.getTextSize(label, font, font_scale, thickness)[0]
-            draw.text((x,y), label , font=Font, fill=black)
-            cv2.rectangle(frame, (x, y - size[1]), (x + size[0], y), yellow, cv2.FILLED)
-            frame = np.array(img_pil)
+            cv2.rectangle(frame, (x, y), (x + size[0], y + size[1]+5), yellow, cv2.FILLED)
             cv2.rectangle(frame, (x,y), (x+w, y+h), yellow)
+
+            img_pil = Image.fromarray(frame)
+            draw = ImageDraw.Draw(img_pil)
+
+            draw.text((x,y-3), label , font=Font, fill=black)
+            return np.array(img_pil)
             # cv2.putText(frame, label, (x, y), font, font_scale, black, thickness)
         elif flag == 6:
             label = "Stranger"
             size = cv2.getTextSize(label, font, font_scale, thickness)[0]
             # cv2.putText(frame, label, (x, y), font, font_scale, black, thickness)
-            draw.text((x,y), label , font=Font, fill=black)
-            frame = np.array(img_pil)
-            cv2.rectangle(frame, (x, y - size[1]), (x + size[0], y), red, cv2.FILLED)
+            cv2.rectangle(frame, (x,y), (x + size[0], y+size[1]+5), red, cv2.FILLED)
             cv2.rectangle(frame, (x,y), (x+w, y+h), red)
+
+            img_pil = Image.fromarray(frame)
+            draw = ImageDraw.Draw(img_pil)
+
+            draw.text((x,y-3), label , font=Font, fill=black)
+            return np.array(img_pil)
         elif flag == 5:
             infor = next(item for item in Stds if item["name"] == label)
-            size = cv2.getTextSize(infor.get('name'), font, font_scale, thickness)[0]
-            # cv2.putText(frame, infor.get('name'), (x, y), font, font_scale, black, thickness)
-            draw.text((x,y), infor.get('name') , font=Font, fill=black)
-            frame = np.array(img_pil)
-            cv2.rectangle(frame, (x, y - size[1]), (x + size[0], y+5), green, cv2.FILLED)           
-            size_ID = cv2.getTextSize('ID: '+str(infor.get('ID')), font, font_scale, thickness)[0]
-            # cv2.putText(frame, "ID: {}".format(infor.get("ID")), (x, y + size_ID[1]+5), font, font_scale, black, thickness)
-            draw.text((x,y), "ID: {}".format(infor.get("ID")) , font=Font, fill=black)
-            frame = np.array(img_pil)
-            cv2.rectangle(frame, (x, y+5), (x + size_ID[0], y + size_ID[1]+10), green, cv2.FILLED)
-            size_sy = cv2.getTextSize("school_year: " + str(infor.get('school_year')), font, font_scale, thickness)[0]
-            # cv2.putText(frame, "school_year:{}".format(infor.get("school_year")), (x, y + 2*size_sy[1]+10), font, font_scale, black, thickness)
-            draw.text((x,y), "school_year:{}".format(infor.get("school_year")) , font=Font, fill=black)
-            frame = np.array(img_pil)
-            cv2.rectangle(frame, (x, y + size_sy[1]+10), (x + size_sy[0], y + 2*size_sy[1]+15 ), green, cv2.FILLED)
             cv2.rectangle(frame, (x,y), (x+w, y+h), green)
+            size = cv2.getTextSize(infor.get('name'), font, font_scale, thickness)[0]
+            size_ID = cv2.getTextSize('ID: '+str(infor.get('ID')), font, font_scale, thickness)[0]
+            size_sy = cv2.getTextSize("K" + str(infor.get('school_year')), font, font_scale, thickness)[0]
+            cv2.rectangle(frame, (x, y), (x + size[0], y+size[1]+5), green, cv2.FILLED)           
+            cv2.rectangle(frame, (x, y+size[1]+5), (x + size_ID[0], y + 2*size_ID[1]+10), green, cv2.FILLED)
+            cv2.rectangle(frame, (x, y + 2*size_sy[1]+10), (x + size_sy[0], y + 3*size_sy[1]+15 ), green, cv2.FILLED)
+
+            img_pil = Image.fromarray(frame)
+            draw = ImageDraw.Draw(img_pil)
+
+            # cv2.putText(frame, infor.get('name'), (x, y), font, font_scale, black, thickness)
+            draw.text((x,y-2), infor.get('name') , font=Font, fill=black)
+            # cv2.putText(frame, "ID: {}".format(infor.get("ID")), (x, y + size_ID[1]+5), font, font_scale, black, thickness)
+            draw.text((x, y + size_ID[1]+3), "ID: {}".format(infor.get("ID")) , font=Font, fill=black)
+            # cv2.putText(frame, "school_year:{}".format(infor.get("school_year")), (x, y + 2*size_sy[1]+10), font, font_scale, black, thickness)
+            draw.text((x, y +2*size_sy[1]+7), "K{}".format(infor.get("school_year")) , font=Font, fill=black)
+            return np.array(img_pil)
         
-    def draw_mask_stt(cls, frame, point, state, font=cv2.FONT_HERSHEY_SIMPLEX, font_scale=0.5,
+    def draw_mask_stt(self, frame, point, state, font=cv2.FONT_HERSHEY_SIMPLEX, font_scale=0.5,
                     thickness=1):
         red = (10, 20, 255)
         green = (30, 255, 10)
@@ -121,13 +131,6 @@ class FaceIdentify():
             cv2.rectangle(frame, (x+w-size[0], y+h-size[1]), (x+w, y+h), red, cv2.FILLED)
             cv2.putText(frame, label, (x+w-size[0], y+h), font, font_scale, black, thickness)
     
-    def draw_VietNamese(self, point, label, color):
-        fontpath = "./Asap-Regular.otf"
-        font = ImageFont.truetype(fontpath, 10)
-        img_pil = Image.fromarray(frame)
-        draw = ImageDraw.Draw(img_pil)
-        draw.text(point, label , font=font, fill=color)
-        frame = np.array(frame)
 
 
 
@@ -251,26 +254,27 @@ class FaceIdentify():
             mouth = landmark[mStart:mEnd]
             boundRect = cv2.boundingRect(mouth)
             # Calculate hsv of mouth area
-            hsv = cv2.cvtColor(face[int(boundRect[1]):int(boundRect[1] + boundRect[3]),
-                                    int(boundRect[0]):int(boundRect[0] + boundRect[2])], cv2.COLOR_RGB2HSV)
-            area = int(boundRect[2])*int(boundRect[3])
+            if boundRect[3]*boundRect[2]: # if the area of mouth is positive
+                hsv = cv2.cvtColor(face[int(boundRect[1]):int(boundRect[1] + boundRect[3]), 
+                                        int(boundRect[0]):int(boundRect[0] + boundRect[2])], cv2.COLOR_RGB2HSV) 
+                area = int(boundRect[2])*int(boundRect[3])
 
-            boundaries = [
-            ([0, 0, 0], [360, 255, 25]), # black
-            ([0, 0, 166], [360, 39, 255]),  # white
-            ([0, 0, 25], [360, 39, 166]), # gray
-            ([150, 39, 25], [180, 255, 255]), # bule-green # with cyan included
-            ([180, 39, 25], [255, 255, 255]) # blue # also inculded navy
-            ]
+                boundaries = [
+                ([0, 0, 0], [360, 255, 25]), # black
+                ([0, 0, 166], [360, 39, 255]),  # white
+                ([0, 0, 25], [360, 39, 166]), # gray
+                ([150, 39, 25], [180, 255, 255]), # bule-green # with cyan included
+                ([180, 39, 25], [255, 255, 255]) # blue # also inculded navy
+                ]
 
-            for (lower, upper) in boundaries:
-                lower = np.array(lower)
-                upper = np.array(upper)
+                for (lower, upper) in boundaries:
+                    lower = np.array(lower)
+                    upper = np.array(upper)
 
-                mask = cv2.inRange(hsv, lower, upper)
-                # print(np.sum(mask)/area)
-                if np.sum(mask)/area > 50:
-                    return 1
+                    mask = cv2.inRange(hsv, lower, upper)
+                    # print(np.sum(mask)/area)
+                    if np.sum(mask)/area > 50:
+                        return 1
             return 0  
             
     def reload_feature_map(self):

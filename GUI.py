@@ -27,15 +27,18 @@ class Reception():
         self.in4 = {}                       # for the infomation of users
         self.img_in4 = {}                   # for the imgs of users
 
-        self.canvas = Canvas(self.root, height=550, width=1225)
+        HEIGHT = 550
+        WIDTH = 1225
+
+        self.canvas = Canvas(self.root, height=HEIGHT, width=WIDTH)
         self.canvas.pack()
         self.back_ground_img = PhotoImage(file='bg.png')
         self.back_ground = Label(self.root, image=self.back_ground_img)
         self.back_ground.place(relheight=1, relwidth=1 )
         self.grid1 = Frame(self.root, bg='#1a8cff', bd=5)
         self.grid1.place(relx=0.05, rely=0.05)
-        self.grid2 = Frame(self.root, bg='#1a8cff', bd=5)
-        self.grid2.place(relx=0.63, rely=0.05, relwidth=0.3, relheight=0.9)
+        self.grid2 = Frame(self.root, bg='#1a8cff', bd=5, width=0.3*WIDTH)
+        self.grid2.place(relx=0.63, rely=0.05, relheight=0.9)
 
         self.option_frame = Frame(self.grid2, bg='#99bbff', bd=5)
         self.option_frame.place(relx=0, rely=0, relheight=0.1, relwidth=1)
@@ -200,14 +203,14 @@ class Reception():
 
         # infinite loop, break by key ESC
         while True :
-            _, frame = self.vs.read()
+            _, self.frame = self.vs.read()
             frame_counter += 1
-            self.remove_bad_tracker(frame=frame)
+            self.remove_bad_tracker(frame=self.frame)
             if not (frame_counter % 10):
                 # draw info to the panel
                 self.show_info(imgs=face_pics, info=info, quantity=len(info))
                 info = {}
-                face_imgs, points = self.the_bodyguard.detect_face(frame)
+                face_imgs, points = self.the_bodyguard.detect_face(self.frame)
                 # thru detected faces
                 for (_x, _y, _w, _h) in points:
                     x = int(_x)
@@ -237,7 +240,7 @@ class Reception():
 
                     if matchFaceID is None:
                         tracker = dlib.correlation_tracker()
-                        tracker.start_track(frame, dlib.rectangle(x, y, x+w, y+h))
+                        tracker.start_track(self.frame, dlib.rectangle(x, y, x+w, y+h))
 
                         self.faceTracker[face_number] = tracker
                         self.faceStatus[face_number] = 0
@@ -253,43 +256,43 @@ class Reception():
 
                 self.faceCurrentPos[faceID] = (t_x, t_y, t_w, t_h)
                 # detect mask and draw the result
-                mask = self.the_bodyguard.is_mask_on(frame=frame, face_area=self.faceCurrentPos[faceID])
-                self.the_bodyguard.draw_mask_stt(frame=frame, point=self.faceCurrentPos[faceID], state=mask)
+                mask = self.the_bodyguard.is_mask_on(frame=self.frame, face_area=self.faceCurrentPos[faceID])
+                self.the_bodyguard.draw_mask_stt(frame=self.frame, point=self.faceCurrentPos[faceID], state=mask)
                 
                 # faceTracker[faceID].update(frame)
-                cv2.rectangle(frame, (t_x,t_y), (t_x+t_w, t_y+t_h), (225,225,0))
+                # cv2.rectangle(self.frame, (t_x,t_y), (t_x+t_w, t_y+t_h), (225,225,0))
                 # if the face state (status) is Unknown, draw red rect,
                 # no more recognition
                 if self.faceStatus[faceID] == 6:
-                    self.the_bodyguard.draw_label(frame=frame, point=self.faceCurrentPos[faceID],
+                    self.frame = self.the_bodyguard.draw_label(frame=self.frame, point=self.faceCurrentPos[faceID],
                                             flag=6)
                 # if the face state is Known, draw that person information
                 elif self.faceStatus[faceID] == 5: # an acquantance
                     if i<=3 and t_x>0 and t_y>0:
-                        save = frame[t_y:t_y+t_h, t_x:t_x+t_w]
+                        save = self.frame[t_y:t_y+t_h, t_x:t_x+t_w]
                         face_pics[i] = cv2.resize(save, (100,100))
                         info[i] = self.new_std.search_info(name=self.label[faceID]) 
 
-                    self.the_bodyguard.draw_label(frame=frame, point=self.faceCurrentPos[faceID],
+                    self.frame = self.the_bodyguard.draw_label(frame=self.frame, point=self.faceCurrentPos[faceID],
                                             flag=5, label=self.label[faceID])
                 # if this is the 1st time detected, recognize it
                 elif self.faceStatus[faceID] == 0:
-                    face, pos = self.the_bodyguard.crop_face(frame,self. faceCurrentPos[faceID])
+                    face, pos = self.the_bodyguard.crop_face(self.frame,self. faceCurrentPos[faceID])
                     face = np.expand_dims(face, axis=0)
                     name = self.the_bodyguard.identify_face(face)
                     self.label[faceID] = name
-                    self.the_bodyguard.draw_label(frame=frame, point=self.faceCurrentPos[faceID],
+                    self.frame = self.the_bodyguard.draw_label(frame=self.frame, point=self.faceCurrentPos[faceID],
                                             flag=0 )
                     self.faceStatus[faceID] += 1
                 # in 5 times of recognizing that face, if at any time, the label changes,
                 # that person should be a stranger
                 elif self.faceStatus[faceID] < 5 and self.faceStatus[faceID] > 0:
-                    self.the_bodyguard.draw_label(frame=frame, point=self.faceCurrentPos[faceID],
+                    self.frame = self.the_bodyguard.draw_label(frame=self.frame, point=self.faceCurrentPos[faceID],
                                                 flag=self.faceStatus[faceID] )
                     if self.label[faceID] == "Unknown":
                         self.faceStatus[faceID] = 6
                     if not (frame_counter % 2):
-                        face, pos = self.the_bodyguard.crop_face(frame, self.faceCurrentPos[faceID])
+                        face, pos = self.the_bodyguard.crop_face(self.frame, self.faceCurrentPos[faceID])
                         face = np.expand_dims(face, axis=0)
                         name = self.the_bodyguard.identify_face(face)
                         if self.label[faceID] == name:
@@ -298,7 +301,7 @@ class Reception():
                             self.label[faceID] = "Unknown"
                             self.faceStatus[faceID] = 6
 
-            image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            image = cv2.cvtColor(self.frame, cv2.COLOR_BGR2RGB)
             image = Image.fromarray(image)
             image = ImageTk.PhotoImage(image)
 

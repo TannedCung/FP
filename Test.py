@@ -25,6 +25,7 @@ from keras.engine import  Model
 from tkinter import *
 from tkinter import ttk
 from PIL import ImageFont, ImageDraw, Image
+import Recognition2_v2 as Recognition
 
 
 Cascade_path = "./pretrained_models/haarcascade_frontalface_alt.xml"
@@ -413,10 +414,23 @@ print(files)
 
 '''
 # 14
+class draw_VietNamese():
+    def __init__(self):
+        self.fontpath = "./data/Font/VPSTRSAL.TTF"
+        self.Font = ImageFont.truetype(self.fontpath, 100, encoding="unic")
+
+    def draw_text(self, frame, point, label, color):
+        img_pil = Image.fromarray(frame)
+        draw = ImageDraw.Draw(img_pil)
+        x,y,w,h = point
+        draw.text((x,y), label, font=self.Font, color=color)
+        return np.array(img_pil)
 
 a = cv2.VideoCapture(0)
 c = np.empty((4,128,128,3), np.uint8)
 black = (0, 0, 0)
+bg = draw_VietNamese()
+
 
 while 1:
     _, frame = a.read(0)
@@ -430,19 +444,15 @@ while 1:
                                             flags=cv2.CASCADE_SCALE_IMAGE
                                             )
     
-    if len(faces) == 1:
+    if len(faces):
         x,y,w,h = faces[0]
-        b = frame[y:y+h, x:x+w]
-        c[0] = cv2.resize(frame[y:y+h, x:x+w], (128,128))
-        fontpath = "./data/Font/VPSTRSAL.TTF"
-        Font = ImageFont.truetype(fontpath, 30, encoding="unic")
-        img_pil = Image.fromarray(frame)
-        draw = ImageDraw.Draw(img_pil)
-        draw.text((x,y), "Tân" , font=Font, fill=black)
-        frame = np.array(img_pil)
-        cv2.rectangle(frame, (x+w, y+h), (x+w+20, y+h+20),(255,255,0))
-        cv2.imshow('not cropped', b)
-        cv2.imshow('cropped', c[0])
+    else:
+         x=y=0
+         w=h=100
+
+    frame = bg.draw_text(frame, (x,y,w,h), label="Tân", color= (0,0,0))
+    cv2.rectangle(frame, (x+w, y+h), (x+w+20, y+h+20),(255,255,0))
+
     cv2.imshow('frame', frame)
 
     if cv2.waitKey(5) == 27:
