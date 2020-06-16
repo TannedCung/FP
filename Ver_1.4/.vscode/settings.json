@@ -1,0 +1,7 @@
+{
+    "python.linting.pylintArgs": [
+        "--generate-members"
+    ],
+    "git.ignoreLimitWarning": true
+
+}
