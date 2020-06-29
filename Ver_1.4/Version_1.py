@@ -13,6 +13,7 @@ import compute_feature
 
 from tkinter import font, Tk
 from tkinter import *
+from datetime import datetime
 
 
 # 1st run\
@@ -25,12 +26,12 @@ for name in names:
 
 com.biuld_new_model()
 
-"""
+
 std = Student()
 std.save_infor(name="Nguyen Phu Trong")
 std.save_infor(name="Nguyen Xuan Phuc")
 std.save_infor(name="Unknown")
-
+"""
 
 
 # 2
@@ -98,6 +99,15 @@ cv2.imwrite("sign_up_2.png", bt_sign_up_2)
 
 # 5
 
-
+"""
 print("keras version: {}".format(keras.__version__))
 print("tf version: {}".format(tf.__version__))
+"""
+
+# 6
+date = datetime.date(datetime.now())
+time = datetime.time(datetime.now())
+
+print(str(date))
+print(str(time))
+print(type(date))

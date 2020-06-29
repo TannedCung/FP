@@ -31,7 +31,8 @@ class Serial_stuff():
         except Exception as e:
             print(e)
             temp = 0
-        return temp
+        return 37.5
+        
         
     def out(self):
         self.ser.write(bytes("out", encoding="UTF-8"))                                        # "out" = give out function in adruino

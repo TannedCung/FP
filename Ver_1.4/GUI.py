@@ -12,6 +12,7 @@ import dlib
 from keras_vggface import VGGFace
 from Transporter import *
 import sys
+from Secretary import *
 
 class Reception():
     Cascade_path = "./pretrained_models/haarcascade_frontalface_alt.xml"
@@ -19,6 +20,7 @@ class Reception():
     def __init__(self):          
         self.Receptionist = compute_feature.FaceExtractor()
         self.the_bodyguard = Recognition.FaceIdentify()
+        self.Secretary = Secretary()
         self.new_std = Student.Student()
         self.vs = cv2.VideoCapture(-1)
         self.detector = cv2.CascadeClassifier(self.Cascade_path)
@@ -185,6 +187,12 @@ class Reception():
 
         # pop the bad face
         for faceID in delete_id_list:
+            in4 = self.new_std.search_info(name=self.label[faceID])
+            n = in4.get('name')
+            ID = in4.get('ID')
+            temp = self.temp[faceID]
+            if temp is not None:
+                self.Secretary.note(name=n , ID=ID , temp=temp )
             self.faceTracker.pop(faceID, None)
             self.faceCurrentPos.pop(faceID, None)
             self.faceStatus.pop(faceID, None)
@@ -231,7 +239,6 @@ class Reception():
             school_year = info[i].get('school_year')
             temp = self.temp[listID[i]]
 
-
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             img = Image.fromarray(img)
             img = ImageTk.PhotoImage(img)
@@ -255,6 +262,7 @@ class Reception():
         """ Jason can talk with the arduino """
         while 1:
             self.t = self.Jas.get_temp()
+            # self.t = 37
 
     
     def VS(self):
