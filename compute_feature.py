@@ -304,15 +304,16 @@ class FaceExtractor():
         H = self.model.fit(x=trainX, y=trainY, epochs=epochs, verbose=1, callbacks=[check_point], validation_data=(validX, validY),
                             steps_per_epoch=len(trainX//batch_size), validation_steps=len(validX//batch_size))
         print("[INFO]: Build new model successful")
-'''  
+"""
 com = FaceExtractor()
+com.biuld_new_model()
+
 names = os.listdir(FACE_IMAGES_FOLDER)
 
 for name in names:
     com.compute_features(name)
 
-com.biuld_new_model()
+"""
 
-'''
 
 

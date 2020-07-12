@@ -18,7 +18,7 @@ from datetime import datetime
 
 # 1st run\
 
-
+"""
 com = compute_feature.FaceExtractor()
 # names = {"Nguyen Phu Trong", "Nguyen Xuan Phuc", "Unknown"}
 # for name in names:
@@ -28,10 +28,8 @@ com.biuld_new_model()
 """
 
 std = Student()
-std.save_infor(name="Nguyen Phu Trong")
-std.save_infor(name="Nguyen Xuan Phuc")
+
 std.save_infor(name="Unknown")
-"""
 
 
 # 2
