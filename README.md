@@ -61,7 +61,7 @@ However, the Robot need to update his knowledge whenever he gets a new friend. w
 - Classification
 ![](data/examples/Architecture.png)  
 The feature extraction part will be init at first and shouldn't have any modifications. It locates in ```/models/feature_model.h5```  
-The other one, also on the other hand, updates everytime a new user signs up. The feature of new user (output of feature extraction) will be computed one time    every user and saved in ```/data/pickle/features``` in format ```.pickle```. These features are the data to train classification.  
+The other one, also on the other hand, updates everytime a new user signs up. The features of new users (output of feature extraction) will be computed one time    every user and saved in ```/data/pickle/features``` in format ```.pickle```. These features are the data to train classification.  
 As i said, the weight should have a littile change to work with asian people.  
 ### Data for tuning
 data comes from this link. All are VietNamese people.
