@@ -1,5 +1,0 @@
-{
-    "python.pythonPath": "/home/tanned/anaconda3/bin/python",
-    "python.linting.pylintArgs": ["--generate-members"]
-
-}
