@@ -86,6 +86,6 @@ The result returns quite good at 93% on test set
 Thanks to [Mì Ai](https://www.miai.vn/thu-vien-mi-ai/), i found this dataset in the last days of this project.
 The dataset contains all of "with_mask" images, and not so clean. So, i filtered it a bit.  
 The "without_mask" data comes from LWF dataset. Only need to take an equal number of images and we're good to go.  
-New dataset can be download in [here](https://drive.google.com/drive/folders/1Kyju0sJ5jR9wdRYQTGI1nXdRhpr_FJUS?usp=sharing).
+New dataset can be downloaded in [here](https://drive.google.com/drive/folders/1Kyju0sJ5jR9wdRYQTGI1nXdRhpr_FJUS?usp=sharing).
 
 
