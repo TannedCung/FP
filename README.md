@@ -8,7 +8,6 @@
  - Stick it into your laptop
  - run ```GUI.py``` file and you're good to go   
  [Disclaimer]: Without an Arduino borad connected, the fps could be fluctuated as the programe will try to read temp from sensor repeatedly.  
- The programe is written to run in Linux.
  
  ## Prerequisites
  
@@ -38,7 +37,7 @@ if this is the first time the computer've seen new user then spend a littie time
 wait a few seconds (actually it takes "some" few seconds to complete adding new user)  
 ![](data/examples/done.png)  
 Alright, from now on, robot should have a new friend :v.  
-### how about face mask and hand sanitizer, you said it gives freely???
+### Face mask and hand sanitizer
 - For the face mask, press ``` Have mask``` button and a white box will slide to you.
 - If you want to clean your hand, put it on the hole beside white box.
 - However in the scope of this repo, how they works won't be included. 
@@ -50,7 +49,7 @@ Sorry, the robot looks a bit ugly, it lives on budget :(
 
 # What are the models in this repo ???
 
-This robot has 2 models on his brain. 1 is to recognize users, the other is to check if they are putting on a mask. Both of these two used Transfer Learning method
+This robot has 2 models. 1 is to recognize users, the other is to check if they are putting on a mask. Both of these two used Transfer Learning method
 ## Face recognition
 With the Backbone is VGGFace2, this model gives an incredible result (with non-asian face). Without my face signed up, it confused me between strangers and Obama's First lady - Michelle Obama (?????). Can't bilieve we have any kind of these blood ties.
 The thing is, this model is built for non-asian faces and it needs some change in its weight.
